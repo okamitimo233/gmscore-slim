@@ -6,6 +6,7 @@ id: gmscore-slim
 name: GMS Slim
 summary: 按实测证据压制 Google Play services 的后台唤醒与常驻服务
 description: README.md
+license: MIT
 homepage: https://github.com/okamitimo233/gmscore-slim
 support: https://github.com/okamitimo233/gmscore-slim/issues
 tags: [system, performance, google]

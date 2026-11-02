@@ -179,3 +179,7 @@ git tag v1.3 && git push origin v1.3
 （`https://modules.kernelsu.org/api/v1/modules/gmscore-slim/update.json`），
 模块在 [modules.kernelsu.org](https://modules.kernelsu.org) 上架后启用应用内更新；上架前该地址不存在。
 
+## 许可
+
+[MIT](LICENSE)
+
