@@ -29,6 +29,9 @@
 | 架构 | arm64-v8a |
 | Root | KernelSU 或 Magisk，需具备 magic mount（overlay 部分依赖） |
 
+> [!NOTE]
+> overlay 部分依赖 magic mount。没有它模块仍能跑运行时部分，只是定位豁免行删不掉。
+
 本模块的结论全部来自单机实测：Android 17 / SDK 37、HyperOS V816、KernelSU 3.3.1 + magic_mount_rs、GMS 26.43.30。换系统版本结论可能不同，以本机日志为准。
 
 ## 安装
@@ -58,7 +61,11 @@ grep -c VERIFY-FAIL /data/adb/gmscore-slim/log/last.log  # 期望 0
 wc -l /product/etc/sysconfig/google.xml                  # 挂上后 106（原版 107）
 ```
 
-三条都对，说明模块在工作。不对就去 [docs/troubleshooting.md](docs/troubleshooting.md) 按症状查。
+- [ ] 日志结尾出现 `VERIFY` 行
+- [ ] `VERIFY-FAIL` 计数为 0
+- [ ] `google.xml` 是 106 行
+
+三条都勾上，说明模块在工作。勾不上就去 [docs/troubleshooting.md](docs/troubleshooting.md) 按症状查。
 
 ## 卸载
 

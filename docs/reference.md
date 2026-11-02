@@ -78,6 +78,24 @@
 | `NOT-MOUNTED` | 系统读到的仍是原版 | overlay 未生效 |
 | `UNKNOWN` | 系统内容与模块版、原版都不同 | 可能被别的模块覆盖 |
 
+把上面这张表压成一张判定图，更容易看出哪些标记能直接信：
+
+```mermaid
+flowchart LR
+    A["施加一项"] --> B{"手段"}
+    B -->|"appops / device_config / settings"| C["回读系统本身"]
+    C --> D["OK 或 FAIL"]
+    B -->|"组件 / 权限"| E["回读本地快照"]
+    E --> F["SET"]
+    F --> G["整轮结束 verify_real"]
+    G --> H["VERIFY-OK 或 VERIFY-FAIL"]
+    D --> I["可以直接当结论"]
+    H --> I
+```
+
+> [!TIP]
+> 只想知道「这次成没成」，读日志最后一行就够了。`OK` / `VERIFY-OK` / `VERIFY-FAIL` 是系统回读的结果，`SET` 只是回执。
+
 ## 三、文件布局
 
 ### 3.1 仓库

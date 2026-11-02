@@ -33,15 +33,18 @@
 
 ## 三、重启后发生什么
 
-```
-开机
- └─ service.sh          等 sys.boot_completed（≤5 分钟）
-                        等 /data 解密完成（≤2 分钟）
-                        再等 15 秒让 PackageManager 就绪
-                        取锁 → 施加全部已开启项 → 真实复核 → 放锁
- └─ boot-completed.sh   再等 30 秒
-                        记录 overlay 挂载状态
-                        取锁 → 同一套施加逻辑再跑一遍
+```mermaid
+flowchart TD
+    A["开机"] --> S1["service.sh 启动"]
+    A --> B1["boot-completed.sh 启动"]
+    S1 --> S2["等 sys.boot_completed，最多 300 秒"]
+    S2 --> S3["等 /data 解密完成，最多 120 秒"]
+    S3 --> S4["sleep 15，等 PackageManager 就绪"]
+    S4 --> S5["取锁，run_all，verify_real，放锁"]
+    B1 --> B2["sleep 30，记录 overlay 挂载状态"]
+    B2 --> B3{"锁是否空着"}
+    B3 -->|"空"| B4["取锁，再跑一遍 run_all"]
+    B3 -->|"被占用"| B5["记 SKIP，本轮跳过"]
 ```
 
 跑两遍不是冗余。GMS 会自己把被 bind 的活跃服务重新启用，见 [platform-notes.md](platform-notes.md)。
@@ -62,8 +65,12 @@
 
 ## 五、按需开开关
 
-开关文件是 `/data/adb/gmscore-slim/config.sh`（不是模块目录里那份模板，改模板对已装系统无效）。
-改完两个动作，顺序不限：
+开关文件是 `/data/adb/gmscore-slim/config.sh`。
+
+> [!IMPORTANT]
+> 改 `module/lib/config.sh` 对已安装的系统没有影响。它只是安装时复制一次的模板，之后不再被读取。
+
+改完开关做两件事，顺序不限：
 
 ```sh
 # 1. 编辑
@@ -80,8 +87,8 @@ vi /data/adb/gmscore-slim/config.sh
 | 档位 | 打开 | 收益 | 代价 |
 |---|---|---|---|
 | 保守（默认） | `TELEMETRY`、`SC_LOCATION` | 遥测被禁、定位受总开关约束 | 几乎无感 |
-| 均衡 | 加 `PERSISTENT`、`SC_POWERSAVE` | 常驻服务被禁后 `startRequested` 从 52 降到 21；深睡更冷 | Play Integrity 可能受影响；深睡 FCM 延迟 2–3 分钟 |
-| 激进 | 再加 `PERM_SCAN`、`ALARM_DELAY`、`DOZE_CONSTANTS` | 扫描类权限失效，闹钟与 Doze 窗口收紧 | 附近分享、快速配对、投屏发现可能失灵；闹钟与推送更迟 |
+| 均衡 | 加 `PERSISTENT`、`SC_POWERSAVE` | 常驻服务被禁后 `startRequested` 从 52 降到 21；深睡更冷 | Play Integrity 可能受影响；深睡 FCM 延迟 2–3 分钟[^fcm] |
+| 激进 | 再加 `PERM_SCAN`、`ALARM_DELAY`、`DOZE_CONSTANTS` | 扫描类权限失效，闹钟与 Doze 窗口收紧[^doze] | 附近分享、快速配对、投屏发现可能失灵；闹钟与推送更迟 |
 
 **不建议开**：`FEATURE_DROIDGUARD`（银行与游戏可能不认设备）、`FEATURE_PERM_BTCONNECT`（会破坏蓝牙连接本身）。
 
@@ -97,7 +104,10 @@ tail -n 1 /data/adb/gmscore-slim/log/last.log  # 结尾的 VERIFY 结论
 cat /data/adb/gmscore-slim/state/manifest.tsv  # 每项改动：类型 键 原值 写入值
 ```
 
-日志结尾出现 `VERIFY 全部一致` 或 `VERIFY 有 N 项与系统实际状态不一致`，这是唯一可信的结论来源。
+日志结尾只会是两种之一：`VERIFY 全部一致`，或 `VERIFY 有 N 项与系统实际状态不一致`。
+
+> [!TIP]
+> 中间的 `SET` 行只说明命令已下达，别拿它当结论。能当结论的只有结尾的 `VERIFY`。
 
 ### 系统的账
 
@@ -133,3 +143,6 @@ cat /data/adb/gmscore-slim/state/manifest.tsv  # 每项改动：类型 键 原�
 - 你依赖深睡推送（手表、消息提醒）：不要同时开 `SC_POWERSAVE` 和 `DOZE_CONSTANTS`。
 - 装了内核调优模块（如 hanamaki_kernel）：`FEATURE_ALARM_DELAY` 与它方向相反，二选一。
 - 需要 Nearby Share、Fast Pair、无线投屏稳定：不要开 `PERM_SCAN`。
+
+[^doze]: Doze 是 Android 的深度休眠机制。维护窗是它定期放行网络与后台任务的时间片，缩短维护窗等于减少 GMS 在深睡期间的活动机会。
+[^fcm]: Firebase Cloud Messaging，Google 的推送通道。GMS 在深睡时被冻结得越彻底，消息到达就越迟。

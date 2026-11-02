@@ -17,17 +17,15 @@
 
 ## 二、分三层
 
-```
-入口层   customize.sh  service.sh  boot-completed.sh  action.sh  uninstall.sh
-            │            │              │                │           │
-策略层   apply.sh ── do_telemetry / do_persistent / do_droidguard
-            │        do_perm_scan / do_appops / do_alarm_delay
-            │        do_doze_constants / do_whitelist / run_all
-            │
-通用层   core.sh  ── log / take_lock / gms_snapshot / perm_snapshot
-            │        kv_read / kv_write / kv_restore / man_* / rollback_all / verify_real
-            │
-覆盖层   sysconfig.sh ── sc_build / sc_verify / sc_sane
+```mermaid
+flowchart TD
+    E["入口层：customize.sh / service.sh / boot-completed.sh / action.sh / uninstall.sh"]
+    S["策略层 apply.sh：决定动哪些目标"]
+    C["通用层 core.sh：命令怎么写、结果怎么判、清单怎么记"]
+    Y["覆盖层 sysconfig.sh：生成、自检、判断挂载"]
+    E -->|"何时动"| S
+    S -->|"怎么动"| C
+    S -->|"改文件"| Y
 ```
 
 | 层 | 文件 | 职责 | 不知道什么 |
@@ -48,6 +46,23 @@
 | 开机完成 | `boot-completed.sh` | `sleep 30` | 记 overlay 挂载状态，取锁，再跑一遍 `run_all` |
 | 手动 | `action.sh` | 无 | 打印现状面板 → 按当前开关重新生成 overlay → 取锁跑 `run_all` |
 | 卸载 | `uninstall.sh` | 无 | `rollback_all` |
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant S as service.sh
+    participant L as 状态锁
+    participant K as boot-completed.sh
+    Note over S,K: 两条路径并行起步，谁先取到锁谁施加
+    S->>L: mkdir state/.lock
+    L-->>S: 取到，开始施加
+    S->>S: run_all 与 verify_real
+    K->>K: sleep 30 后开始
+    K->>L: 尝试取锁
+    L-->>K: 已被占用
+    K->>K: 记 SKIP，本轮跳过
+    S->>L: release_lock
+```
 
 `service.sh` 的三段等待对应三件事：系统启动完成、`/data` 解密完成（Direct Boot 期间 `pm` 不可用）、包管理器扫描完成（`wait_cmd_ready` 还会用 `cmd appops get` 探活，最多 6 次，每次 10 秒）。
 
@@ -110,11 +125,19 @@ fi
 
 ### 7.1 生成
 
+```mermaid
+flowchart TD
+    A["取可信基底：优先 backup/google.xml.orig，缺失则从 /product 读并校验"] --> B{"三个锚点齐全"}
+    B -->|"否"| X1["报 SC-FAIL，不动系统文件"]
+    B -->|"是"| C["复制到模块目录，作为生成起点"]
+    C --> D["按开关逐行 sed 删除，内容匹配不用行号"]
+    D --> E["完整性自检：三个锚点 + dialer 行"]
+    E -->|"不通过"| X2["删掉生成物，放弃覆盖"]
+    E -->|"通过"| F["chmod 0644，交给 magic mount"]
 ```
-备份原版 google.xml ──► 按开关逐行 sed 删除 ──► 完整性自检 ──► 写入模块目录
-     ^                     ^                        │
-  首次从 /product 读    内容匹配，不用行号          不通过就删掉生成物，不覆盖
-```
+
+> [!NOTE]
+> 图里两条失败分支都是刻意的默认姿态：宁可这次不生效，也不把系统文件改坏。
 
 三个要点：
 

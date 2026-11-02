@@ -34,7 +34,7 @@
 2. **root 也 revoke 不掉 `SYSTEM_FIXED`**。`revokeRuntimePermissionInternal` 判断的是 `callingAppId != SYSTEM_UID`（1000），uid 0 也过不去。
 3. **`updatePermissionFlags` 会清 mask**。对非 SYSTEM_UID 调用时，它会把 `FLAG_PERMISSION_SYSTEM_FIXED` 从 mask 里剔掉，所以没有 CLI 能去掉这个 flag。
 
-本机 GMS 只有 4 个 `SYSTEM_FIXED` 权限：`ACCESS_FINE_LOCATION`、`ACCESS_COARSE_LOCATION`、`ACCESS_BACKGROUND_LOCATION`、`ACTIVITY_RECOGNITION`。
+本机 GMS 只有 4 个 `SYSTEM_FIXED` 权限[^system-fixed]：`ACCESS_FINE_LOCATION`、`ACCESS_COARSE_LOCATION`、`ACCESS_BACKGROUND_LOCATION`、`ACTIVITY_RECOGNITION`。
 恰好就是最想压的那几个。
 
 ## 三、坑一：`cmd` / `pm` / `dumpsys` 的 stdio fd
@@ -50,6 +50,15 @@ pm dump com.google.android.gms > /data/adb/gmscore-slim/state/gms.dump
 ```
 
 写 `/data/adb`、`/data/local/tmp`、`/sdcard` 都一样失败，退出码 2。
+
+
+```mermaid
+flowchart LR
+    A["root shell 执行 cmd / pm / dumpsys"] -->|"stdio fd 随 binder 传给 system_server"| B["system_server"]
+    B --> C{"它要往这个 fd 写"}
+    C -->|"fd 是 /data/adb 下的普通文件"| D["写入被拒：Failed transaction 2147483646"]
+    C -->|"fd 是管道"| E["写入成功"]
+```
 
 根因：`cmd` / `pm` / `dumpsys` 会把 stdio 的 fd 通过 binder 传给 system_server。stdout 是 root 打开在 `/data/adb`（context `adb_data_file`）下的普通文件时，system_server 写不了这个 fd，事务失败。
 
@@ -72,6 +81,9 @@ done <"$MANIFEST"
 ```
 
 `cmd` 把 stdin 也传给 system_server，事务失败，错误被 `2>/dev/null` 吞掉，变量成空值。
+
+> [!CAUTION]
+> 这一条比上一条危险，因为不报错。回滚会「看起来正常但判错」，把该还原的项判成 KEEP，用户的改动留在系统里出不去。
 回滚时「现值」读成空，判定成「已被别人改过」，于是 `KEEP` 跳过——日志看起来正常，但用户的改动留在系统里出不去。
 
 三种写法都行，本模块用第一种：
@@ -220,3 +232,5 @@ activity_manager/kill_bg_restricted_cached_idle=false
 这解释了为什么 `boot-completed.sh` 要再复核一遍——不是冗余，是必要。
 
 评估某个组件能不能压住，必须隔一段时间复查，不能只看禁用后那一刻。
+
+[^system-fixed]: `SYSTEM_FIXED` 是权限的固定标记。系统应用在 manifest 里声明后，用户与命令行都改不掉，只有换 ROM 或直接改 `/data` 下的权限库才行。

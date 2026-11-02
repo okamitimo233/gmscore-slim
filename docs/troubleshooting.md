@@ -24,6 +24,22 @@ tail -n 40 /data/adb/gmscore-slim/log/last.log
 | 卸载后系统没恢复 | [10](#十卸载没恢复) |
 | GMS 出问题，要立刻回退 | [11](#十一紧急回退) |
 
+知道主症状但不确定先查哪里时，按这张图走；图上每一节都能在左边的表里找到。
+
+```mermaid
+flowchart TD
+    A["装了没效果"] --> B{"有日志吗"}
+    B -->|"没有"| C["第二节：模块未启用，或 service.sh 没跑"]
+    B -->|"有"| D{"日志里有 FAIL 吗"}
+    D -->|"有"| E["第三节：某项被平台拒绝"]
+    D -->|"没有"| F{"结尾是 VERIFY-FAIL 吗"}
+    F -->|"是"| G["第四节：期望值与系统实际不符"]
+    F -->|"没有"| H{"overlay 挂载状态"}
+    H -->|"NOT-MOUNTED"| I["第五节：没挂上"]
+    H -->|"UNKNOWN"| J["第六节：被别的模块覆盖"]
+    H -->|"MOUNTED"| K["模块在工作，组件回弹看第七节"]
+```
+
 ## 二、日志根本不存在
 
 ```sh
@@ -75,7 +91,8 @@ grep VERIFY /data/adb/gmscore-slim/log/last.log
 | `VERIFY-FAIL comp ... 期望 disabled 系统实际 enabled` | GMS 自愈，见 [7](#七组件自己回来了) | 等下一轮 `boot-completed` 复核 |
 | `VERIFY-FAIL perm ... 期望 false 系统实际 true` | 该权限可能是 `SYSTEM_FIXED` | 看同轮日志有没有 `LOCKED`；有就属正常 |
 
-「无法重新读取」这条要当回事：它说明模块这一轮的复核是空的，不是「没有问题」。
+> [!WARNING]
+> 「无法重新读取」要当回事：它说明模块这一轮的复核是空的，不等于没有问题。
 
 ## 五、overlay 未挂载
 
@@ -199,6 +216,9 @@ cp /data/adb/modules/gmscore-slim/lib/core.sh /tmp/core.sh
 
 ## 十一、紧急回退
 
+> [!CAUTION]
+> 顺序不能反。运行时改动先清，overlay 撤除要重启，两者叠加才是完整回退。
+
 GMS 登录、支付、推送出问题，按两步恢复，越快越好。
 
 **第一步：清运行时改动**（不用重启）
@@ -235,6 +255,9 @@ cat /data/adb/gmscore-slim/state/.lock 2>/dev/null
 
 ## 十三、收集信息提 issue
 
+<details>
+<summary>一键收集脚本（点开复制）</summary>
+
 ```sh
 {
   echo "## 环境"
@@ -251,5 +274,7 @@ cat /data/adb/gmscore-slim/state/.lock 2>/dev/null
   ls -la /data/adb/modules/gmscore-slim/system/product/etc/sysconfig/ 2>/dev/null
 } > /sdcard/gmslim-report.txt
 ```
+
+</details>
 
 清单里是包名和状态值，不含个人数据。

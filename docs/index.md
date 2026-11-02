@@ -32,7 +32,13 @@ grep -c 'VERIFY-FAIL' /data/adb/gmscore-slim/log/last.log   # 期望 0
 wc -l /product/etc/sysconfig/google.xml               # 挂上后是 106（原版 107）
 ```
 
-三条都对，说明模块已经在工作。任何一条不对，去 [troubleshooting.md](troubleshooting.md) 按症状查。
+逐条对：
+
+- [ ] 日志结尾出现 `VERIFY` 行，而不是停在最后一条 `SET`
+- [ ] `VERIFY-FAIL` 计数为 0
+- [ ] `google.xml` 是 106 行
+
+三条都勾上，说明模块已经在工作。任何一条勾不上，去 [troubleshooting.md](troubleshooting.md) 按症状查。
 
 ## 文档清单
 
