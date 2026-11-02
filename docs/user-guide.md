@@ -19,7 +19,9 @@
 
 ## 二、安装
 
-从 Releases 下载 zip，在 KernelSU 管理器的「模块」页刷入，重启。
+从 Releases 下载模块包，在 KernelSU 管理器的「模块」页刷入，重启。
+
+包名规则是 `{id}-{versionCode}-{version}.zip`，例如 `gmscore-slim-3-v1.2.zip`。`version` 里的非 `A-Za-z0-9._-` 字符会被替换成 `_`，所以带括号或空格的版本号也能正常下载。
 
 安装阶段只做三件事，都很快：
 
@@ -121,7 +123,7 @@ cat /data/adb/gmscore-slim/state/manifest.tsv  # 每项改动：类型 键 原�
 
 ## 八、升级
 
-直接覆盖刷入新 zip，重启。
+直接覆盖刷入新模块包，重启。
 
 `customize.sh` 只在**首次**安装时生成 `config.sh`，升级会保留你改过的开关。overlay 会在安装期按当前开关重新生成。
 

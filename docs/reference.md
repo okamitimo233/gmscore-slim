@@ -95,7 +95,10 @@
 | `module/boot-completed.sh` | 开机完成后第二遍施加 + 记录 overlay 状态 |
 | `module/action.sh` | KSU「操作」按钮：现状面板 + 重新生成 + 幂等复核 |
 | `module/uninstall.sh` | 逐条回滚 |
-| `module.yaml` | KernelSU Modules 展示元数据 |
+| `module.yaml` | KernelSU Modules 展示元数据；`description` 指向 `README.md` |
+| `README.md` | 仓库首页，同时是模块详情页内容 |
+| `docs/` | 按读者分册的文档，入口 [index.md](index.md) |
+| `assets/icon.png` | 模块图标 |
 | `.github/workflows/` | `ci.yml` 预检、`release.yml` 发布 |
 
 `module/system/` 是 overlay 生成物，运行时产出，已被 `.gitignore` 排除。

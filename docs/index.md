@@ -36,6 +36,8 @@ wc -l /product/etc/sysconfig/google.xml               # 挂上后是 106（原�
 
 ## 文档清单
 
+根目录的 [`README.md`](../README.md) 是仓库首页，同时是模块详情页的展示内容。它只保留安装、默认行为、验证三条命令和一张索引表，细节都在 `docs/`。
+
 | 文件 | 内容 | 主要读者 |
 |---|---|---|
 | [user-guide.md](user-guide.md) | 安装、默认配置、怎么开开关、验证、卸载 | 使用者 |
@@ -47,4 +49,4 @@ wc -l /product/etc/sysconfig/google.xml               # 挂上后是 106（原�
 
 ## 版本与授权
 
-当前模块版本见 `module/module.prop` 的 `version` / `versionCode`。许可证为 MIT。
+当前模块版本见 `module/module.prop` 的 `version` / `versionCode`，作者与许可证见同目录的 `module.yaml` 与 `LICENSE`。发布资源名由工具按 `{id}-{versionCode}-{version}.zip` 生成。

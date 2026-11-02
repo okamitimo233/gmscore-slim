@@ -24,6 +24,8 @@ npm run lint    # 对全部 .sh 跑 shellcheck
 
 钩子：`pre-commit` 跑 `npx lint-staged`，`commit-msg` 跑 `npx commitlint --edit`。
 
+shellcheck 之所以是本项目最重要的检查：模块脚本跑在 busybox ash 上，一个引号缺失或一处 bash 扩展，在桌面上看不出来，到手机上就是整轮静默失效。它能提前抓出漏引号导致的词分割、不可移植的 bash 语法、未定义变量、`[` 与 `[[` 的误用。
+
 ## 二、代码约定
 
 - **POSIX sh**，不用 bash 扩展。目标解释器是 busybox ash / toybox。
@@ -106,6 +108,16 @@ sh /data/adb/modules/gmscore-slim/action.sh | tail -n 15
 
 本地没有打包脚本。`release.yml` 用 KernelSU Modules 官方的 `module-release` action 打包 `module/`、跑官方 validator 预检、发布 immutable release。
 
+发布的资源名由工具按 `{id}-{versionCode}-{version}.zip` 生成，不手工命名：
+
+| 来源 | 取值 |
+|---|---|
+| `id` | `module.prop` 的 `id` |
+| `versionCode` | `module.prop` 的 `versionCode` |
+| `version` | `module.prop` 的 `version`，清理成文件名安全形式：`A-Za-z0-9._-` 之外的字符变 `_`，去掉首尾的 `.` `_` `-`，截到 64 字符 |
+
+`module.yaml` 的 `release.assetPattern` 要能匹配它，当前是 `gmscore-slim-*.zip`。改 `id` 的话这个模式也要跟着改。
+
 ```sh
 # 1. 改 module/module.prop：version 与 versionCode 同步递增
 # 2. 本地验证
@@ -140,3 +152,6 @@ git commit --no-verify
 | 施加时序、回滚策略 | `docs/design.md` |
 | 平台限制的新发现 | `docs/platform-notes.md` |
 | 新的失败模式 | `docs/troubleshooting.md` |
+| 安装步骤、默认配置、文档索引 | `README.md`（同时是模块详情页）与 `docs/index.md` |
+
+`module.yaml` 的 `description` 指向 `README.md`，所以 README 里不要堆细节，细节放进 `docs/`，README 只保留安装、默认行为、验证三条命令和一张文档索引表。
