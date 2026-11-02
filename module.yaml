@@ -1,0 +1,24 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/KernelSU-Modules/tools/main/schemas/module.schema.json
+# KernelSU Modules 元数据，参考 https://developers.kernelsu.org/docs/zh-CN/module-yaml
+# version / versionCode / 下载地址来自 release ZIP 里的 module/module.prop，不写在这里。
+schemaVersion: 1
+id: gmscore-slim
+name: GMS Slim
+summary: 按实测证据压制 Google Play services 的后台唤醒与常驻服务
+description: README.md
+homepage: https://github.com/okamitimo233/gmscore-slim
+support: https://github.com/okamitimo233/gmscore-slim/issues
+tags: [system, performance, google]
+icon: assets/icon.png
+metamodule: false
+
+authors:
+  - name: okamitimo233
+    url: https://github.com/okamitimo233
+
+compatibility:
+  androidMinApi: 31
+  architectures: [arm64-v8a]
+
+release:
+  assetPattern: "gmscore-slim-*.zip"

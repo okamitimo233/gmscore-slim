@@ -8,7 +8,7 @@
 ```sh
 git clone git@github.com:okamitimo233/gmscore-slim.git
 cd gmscore-slim
-./scripts/setup.sh        # 安装依赖（husky 钩子随 npm install 自动装好）
+npm install               # 装 husky / lint-staged / commitlint，钩子随 prepare 自动就位
 ```
 
 ## 工具链
@@ -21,6 +21,7 @@ cd gmscore-slim
 | [lint-staged](https://github.com/lint-staged/lint-staged) | 只检查暂存的文件，快 |
 | [shellcheck](https://www.shellcheck.net/) | shell 静态分析（本项目最重要的检查） |
 | [commitlint](https://commitlint.js.org/) | 提交信息规范 |
+| [KernelSU Modules module-release](https://github.com/KernelSU-Modules/tools/tree/main/actions/module-release) | 打包 `module/`、官方 validator 预检、发布 immutable release |
 
 钩子：
 
@@ -31,9 +32,11 @@ cd gmscore-slim
 
 ```sh
 npm run lint      # 手动跑 shellcheck（全部 .sh）
-npm run build     # 打包可刷入的 zip
 npx lint-staged   # 手动对暂存文件跑检查
 ```
+
+打包和发布不做本地脚本：`release.yml` 用官方 `module-release` action 打包 `module/` 并发布，
+`ci.yml` 的 `precheck` 用同一个 action 跑 `dry-run`。推 PR 就能看到包结构检查结果。
 
 ## 为什么重点是 shellcheck
 
@@ -80,17 +83,18 @@ docs: 补充 overlay 挂载验证步骤
 
 - `main` 保持可发布
 - 功能分支：`feat/xxx`、`fix/xxx`
-- 改 `module.prop` 的 `version` 时，`versionCode` 必须同时 +1
-  （模块管理器靠 `versionCode` 判断更新）
-- 发布：打 tag `v<version>`，CI 自动构建 zip 并创建 Release
+- 改 `module/module.prop` 的 `version` 时，`versionCode` 必须同时 +1
+  （模块管理器靠 `versionCode` 判断更新；发布过的 `versionCode` 不能复用，KernelSU Modules 只接受更大的值）
+- 发布：打 tag `v<version>`，`release.yml` 用 KernelSU Modules 官方的 `module-release`
+  action 打包、预检并发布 immutable release
 
 ## 发布流程
 
 ```sh
-# 1. 改 module.prop：version 与 versionCode 同步递增
+# 1. 改 module/module.prop：version 与 versionCode 同步递增
 # 2. 本地验证
-npm run lint && npm run build
-# 3. 提交并打 tag
+npm run lint
+# 3. 提交并打 tag（release.yml 在 tag 上打包并发布）
 git commit -am "chore(release): v1.3"
 git tag v1.3
 git push && git push --tags

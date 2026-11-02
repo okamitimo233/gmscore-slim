@@ -6,8 +6,7 @@
   "homepage": "https://github.com/okamitimo233/gmscore-slim",
   "scripts": {
     "prepare": "husky",
-    "lint": "shellcheck -s sh -x -P . -P lib $(git ls-files '*.sh')",
-    "build": "./scripts/build.sh"
+    "lint": "shellcheck -s sh -x -P module -P module/lib $(git ls-files '*.sh')"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.6.0",
@@ -16,7 +15,7 @@
     "lint-staged": "^15.3.0"
   },
   "lint-staged": {
-    "*.sh": "shellcheck -s sh -x -P lib"
+    "*.sh": "shellcheck -s sh -x -P module -P module/lib"
   },
   "engines": {
     "node": ">=18"

@@ -1,0 +1,36 @@
+name: Release
+
+# 打 v* tag 时发布：由 KernelSU Modules 官方的 module-release action 打包 module/，
+# 用官方 validator 预检（不通过就什么都不发），再按 draft → 上传 → 发布 的顺序
+# 生成 immutable release（资源名 {id}-{versionCode}-{version}.zip）。
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write # create the release and upload the ZIP
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # pin 到完整 commit SHA：这个步骤带 contents: write，不能跟分支走
+      - uses: KernelSU-Modules/tools/actions/module-release@e0ac1a6193e698beac3c2fc47dec88d180efca8a
+        id: release
+        with:
+          module-dir: module
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          generate-release-notes: true
+
+      # outputs 通过 env: 传入，绝不把 ${{ }} 表达式拼进 shell 脚本
+      # （资源名里含 module.prop 的 version，也就是作者可控的文本）
+      - env:
+          ASSET_NAME: ${{ steps.release.outputs.asset-name }}
+          SHA256: ${{ steps.release.outputs.sha256 }}
+          RELEASE_URL: ${{ steps.release.outputs.release-url }}
+        run: |
+          echo "Published ${ASSET_NAME}"
+          echo "sha256 ${SHA256}"
+          echo "${RELEASE_URL}"

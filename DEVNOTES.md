@@ -220,3 +220,26 @@ sysconfig XML 是**只读系统分区**的文件，能被 magic mount 覆盖；
 而权限状态在 `/data/misc_de/0/apexdata/com.android.permission/access.abx`（Android 17 已是 ABX 二进制，
 `runtime-permissions.xml` 只剩 shared-user 名单），属 `/data` 可写区，overlay 碰不到。
 所以「UGD 用 overlay 解决了权限问题」这个印象是错的——UGD 改的是 Doze 白名单，从来不是权限。
+
+## 仓库结构：改用 KernelSU 官方模板与发布工具
+
+原先 `scripts/build.sh` 自己打 zip、自己 unzip 校验权限，`.github/workflows/ci.yml` 里又有
+一套 `softprops/action-gh-release` 发布 + 再手写一遍权限检查。这些都是官方已经做好的事，已删除。
+
+现在对齐 [KernelSU-Modules/example-module](https://github.com/KernelSU-Modules/example-module)：
+
+| 以前（手搓） | 现在（官方现成） |
+|---|---|
+| `scripts/build.sh` 打 zip + unzip 查权限 | `module-release` action 的 `module-dir: module` |
+| 自写权限自检 | 官方 validator（`@kernelsu-modules/validator`）发布前预检，不过就不发 |
+| `softprops/action-gh-release` | 同一个 action 按 draft → 上传 → 发布，产出 immutable release |
+| 自己维护更新检查 | `module.prop` 的 `updateJson` 指向 KernelSU Modules 托管地址 |
+| `scripts/setup.sh` 包一层 npm install | 直接 `npm install`（husky 的 `prepare` 钩子） |
+
+目录也换成官方布局：模块内容进 `module/`，`module.yaml`、`README.md`、`assets/icon.png`
+留在仓库根。模块内脚本对 `lib/` 的相对引用不变——zip 根仍是模块根。
+
+两个 workflow 里的 `module-release` 和 `actions/checkout` 都 pin 到完整 commit SHA：
+前者那一步带 `contents: write`，不能跟分支走。
+
+本地不再有打包命令。要验证包结构就推 PR，CI 的 `precheck` 用同一个 action 跑 `dry-run: true`。

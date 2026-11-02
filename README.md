@@ -1,7 +1,14 @@
+<p align="center"><img src="assets/icon.png" width="96" alt="icon"></p>
+
 # GMS Slim v1.2（方向 B：唤醒与服务压制 + sysconfig overlay）
 
 针对 Google Play services 后台开销的 KernelSU 模块。
 **不修改系统分区**，只用 `appops` / `pm` / `deviceidle` / `device_config` / `settings` 运行时接口，每项改动写入外部清单，卸载逐条回滚。
+
+## 安装
+
+从 [Releases](https://github.com/okamitimo233/gmscore-slim/releases) 下载 `gmscore-slim-<versionCode>-<version>.zip`，在 KernelSU 管理器里刷入，重启生效。
+卸载模块即自动恢复系统文件；运行时改动由 `uninstall.sh` 逐条回滚。
 
 ## 一、本机能力矩阵（模块设计的全部依据，均为本机实测）
 
@@ -138,18 +145,33 @@ dumpsys location | grep -A2 thunderbird
 
 `boot-completed.sh` 每次开机会在日志记一行 `sysconfig: MOUNTED / NOT-MOUNTED / UNKNOWN`。
 
-## 八、参与开发
+## 八、开发与发布
 
-本项目用 husky + lint-staged + commitlint 管理提交规范，细节见 [`CONTRIBUTING.md`](CONTRIBUTING.md)。
+目录结构对齐 [KernelSU Modules 官方示例模块](https://github.com/KernelSU-Modules/example-module)：
+
+| 路径 | 用途 |
+|---|---|
+| `module/` | 模块本体，其**内容**就是 zip 的根目录 |
+| `module/module.prop` | id、version、versionCode（版本号的唯一来源） |
+| `module.yaml` | KernelSU Modules 展示元数据（名称、图标、标签…），schema 见[官方文档](https://developers.kernelsu.org/docs/zh-CN/module-yaml) |
+| `assets/icon.png` | 图标 |
+| `.github/workflows/release.yml` | 打 `v*` tag 时用官方 `module-release` action 发布 |
+| `.github/workflows/ci.yml` | shellcheck + 官方 validator 预检（`dry-run`，不发布） |
 
 ```sh
 git clone git@github.com:okamitimo233/gmscore-slim.git
 cd gmscore-slim
-./scripts/setup.sh      # 安装依赖，husky 钩子自动就位
-npm run lint            # shellcheck 检查全部脚本
-npm run build           # 打包可刷入的 zip
+npm install          # 装 husky / lint-staged / commitlint，钩子自动就位
+npm run lint         # shellcheck 检查全部脚本
 ```
 
-提交时自动检查脚本（shellcheck）与提交信息（Conventional Commits）。
-已知的平台坑与实测依据见 [`DEVNOTES.md`](DEVNOTES.md)。
+打包与发布不需要本地脚本：`release.yml` 用 [KernelSU Modules 官方 action](https://github.com/KernelSU-Modules/tools/tree/main/actions/module-release)
+打包 `module/`、跑官方 validator 预检、发布 immutable release。发布只需改
+`module/module.prop` 的 `version`/`versionCode`，然后打 tag：
+
+```sh
+git tag v1.3 && git push origin v1.3
+```
+
+提交规范与钩子见 [`CONTRIBUTING.md`](CONTRIBUTING.md)；已知的平台坑与实测依据见 [`DEVNOTES.md`](DEVNOTES.md)。
 
