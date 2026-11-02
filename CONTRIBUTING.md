@@ -8,26 +8,53 @@
 ```sh
 git clone git@github.com:okamitimo233/gmscore-slim.git
 cd gmscore-slim
-./scripts/setup.sh        # 安装 git 钩子 + 依赖检查
+./scripts/setup.sh        # 安装依赖（husky 钩子随 npm install 自动装好）
 ```
 
-`setup.sh` 会做三件事：设置 `core.hooksPath=.githooks`、确保脚本可执行、跑一次校验。
+## 工具链
 
-## 检查什么，为什么
+提交约束由成熟工具组成，不自造轮子：
 
-提交时自动运行，也可以用 `./scripts/verify.sh` 手动跑。
-
-| 检查 | 防的问题 |
+| 工具 | 作用 |
 |---|---|
-| `check-shell.sh` | 语法错误 → 模块开机直接失效。装了 shellcheck 时还会做静态分析 |
-| `check-perms.sh` | `.sh` 丢了可执行位 → 刷入后脚本跑不起来。**同时查工作区与 git 索引** |
-| `check-eol.sh` | CRLF → Android 上报 `bad interpreter` |
-| `check-module.sh` | `module.prop` 字段缺失或 `versionCode` 非整数 → 模块管理器不认 |
-| `check-artifacts.sh` | 产物入库（`system/`、日志、zip）→ 仓库膨胀且会覆盖别人的文件 |
-| `check-secrets.sh` | token / 私钥进公开仓库 |
-| `check-version.sh` | `module.prop` 与 `README` 版本号不一致、同版本重复发 tag |
+| [husky](https://typicode.github.io/husky/) | 管理 git hooks |
+| [lint-staged](https://github.com/lint-staged/lint-staged) | 只检查暂存的文件，快 |
+| [shellcheck](https://www.shellcheck.net/) | shell 静态分析（本项目最重要的检查） |
+| [commitlint](https://commitlint.js.org/) | 提交信息规范 |
 
-每条规则都来自实际踩过的坑，细节记在 [`DEVNOTES.md`](DEVNOTES.md)。
+钩子：
+
+- **pre-commit** → `npx lint-staged` → 对暂存的 `.sh` 跑 shellcheck
+- **commit-msg** → `npx commitlint --edit` → 校验 Conventional Commits
+
+## 常用命令
+
+```sh
+npm run lint      # 手动跑 shellcheck（全部 .sh）
+npm run build     # 打包可刷入的 zip
+npx lint-staged   # 手动对暂存文件跑检查
+```
+
+## 为什么重点是 shellcheck
+
+模块脚本跑在 Android 的 busybox ash / toybox 上，语法错误 = 模块开机直接失效，
+而且这类错误在桌面很难靠肉眼发现。shellcheck 能提前抓出：
+
+- 引号缺失导致的 glibc 分词问题
+- 不可移植的 bash 语法
+- 未使用变量、未定义变量
+- `[` 与 `[[` 的误用
+
+**提交前务必让 shellcheck 零告警。** 确属误报时用精准的
+`# shellcheck disable=SCxxxx`（附原因），不要用全局 `-e`。
+
+## 代码约定
+
+- **POSIX sh**，不用 bash 扩展（目标环境是 busybox ash / toybox）
+- 缩进 2 空格，LF 换行（`.gitattributes` 强制）
+- 变量一律加引号；但调用 `cmd`/`pm`/`dumpsys` 时**必须显式 `</dev/null`**，原因见 [DEVNOTES](DEVNOTES.md)
+- 新增功能要有对应开关，默认关闭高风险项
+- 涉及系统改动的，必须能在 `uninstall.sh` 里回滚
 
 ## 提交信息
 
@@ -39,7 +66,7 @@ cd gmscore-slim
 
 - **type**：`feat` `fix` `docs` `style` `refactor` `perf` `test` `build` `ci` `chore` `revert`
 - **scope**：可选，如 `sysconfig`、`perms`、`core`
-- **subject**：不超过 72 字符，不以句号结尾
+- **subject**：不超过 72 字符
 
 ```
 feat(sysconfig): 支持只删单行豁免
@@ -47,62 +74,32 @@ fix(core): 回滚时清除 device_config override 残留
 docs: 补充 overlay 挂载验证步骤
 ```
 
-`Merge`、`Revert`、`fixup!`、`squash!` 开头的提交自动放行。
-
-## 代码约定
-
-- **POSIX sh**，不用 bash 扩展（目标环境是 Android 的 busybox ash / toybox）
-- 缩进 2 空格，LF 换行（`.gitattributes` 已强制）
-- 变量一律加引号；但调用 `cmd`/`pm`/`dumpsys` 时**必须显式 `</dev/null`**，原因见 DEVNOTES
-- 新增功能要有对应的开关，默认关闭高风险项
-- 涉及系统改动的，必须在 `uninstall.sh` 里能回滚
+规则在 `commitlint.config.mjs` 里，基于 `@commitlint/config-conventional`。
 
 ## 分支与版本
 
 - `main` 保持可发布
 - 功能分支：`feat/xxx`、`fix/xxx`
-- 改 `module.prop` 的 `version` 时，`versionCode` 必须同时 +1（模块管理器靠它判断更新）
-- 发布：打 tag `v<version>`，CI 会自动构建 zip 并创建 Release
-
-## 关于 husky
-
-本仓库**默认不用 husky**，而用 git 原生的 `core.hooksPath`：
-
-- 零依赖，克隆后一条命令生效
-- 钩子随代码版本化，改规则不用重新安装
-- 不引入 `node_modules`
-
-如果你习惯 npm 工作流，也提供了 `package.json` 和 `.husky/` 包装器：
-
-```sh
-npm install        # 装 husky
-npx husky          # 接管 core.hooksPath
-```
-
-`.husky/pre-commit` 等内容只是转发到 `.githooks/`，所以**规则只有一份实现**，
-两种安装方式行为完全一致。
-
-## 跳过检查
-
-紧急情况：
-
-```sh
-git commit --no-verify
-git push --no-verify
-```
-
-但 CI 会跑同样的检查，绕过本地钩子过不了 GitHub Actions。
+- 改 `module.prop` 的 `version` 时，`versionCode` 必须同时 +1
+  （模块管理器靠 `versionCode` 判断更新）
+- 发布：打 tag `v<version>`，CI 自动构建 zip 并创建 Release
 
 ## 发布流程
 
 ```sh
 # 1. 改 module.prop：version 与 versionCode 同步递增
 # 2. 本地验证
-./scripts/verify.sh && ./scripts/build.sh
+npm run lint && npm run build
 # 3. 提交并打 tag
 git commit -am "chore(release): v1.3"
 git tag v1.3
 git push && git push --tags
 ```
 
-CI 在 tag 推上去后自动构建并发布 Release。
+## 跳过检查
+
+```sh
+git commit --no-verify
+```
+
+但 CI 会跑同样的检查，绕过本地钩子过不了 GitHub Actions。

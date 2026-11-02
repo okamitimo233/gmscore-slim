@@ -1,16 +1,12 @@
 #!/bin/sh
 # 打包成可刷入的 KernelSU 模块 zip
-# 只包含模块运行必需的文件，不含仓库自身的开发配置（scripts/、.githooks/ 等）
+# 只包含模块运行必需的文件，不含仓库自身的开发配置（scripts/、.husky/ 等）
 #
 # 用法：scripts/build.sh [输出目录]
 #       默认输出到仓库根目录
 set -u
 
-SCRIPT_DIR=$(CDPATH='' cd -- "$(dirname "$0")" && pwd)
-# shellcheck source=./lib.sh
-. "$SCRIPT_DIR/lib.sh"
-
-ROOT=$(repo_root)
+ROOT=$(CDPATH='' cd -- "$(dirname "$0")/.." && pwd)
 OUT_DIR=${1:-$ROOT}
 
 # 版本号
@@ -52,7 +48,7 @@ for f in service.sh action.sh customize.sh boot-completed.sh uninstall.sh; do
   esac
 done
 
-printf '  大小: %s\n' "$(wc -c <"$ZIP_PATH" | tr -d ' ') 字节"
+printf '  大小: %s 字节\n' "$(wc -c <"$ZIP_PATH" | tr -d ' ')"
 printf '  路径: %s\n' "$ZIP_PATH"
 if [ "$BAD" = "0" ]; then
   printf '  ✓ 脚本权限正确\n'
