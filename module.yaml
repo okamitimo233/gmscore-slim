@@ -4,7 +4,7 @@
 schemaVersion: 1
 id: gmscore-slim
 name: GMS Slim
-summary: 压制 Google Play services 的后台唤醒、遥测与常驻服务，改动记入清单、卸载可回滚
+summary: 压制 Google Play services 的后台唤醒、遥测与常驻服务
 description: README.md
 license: MIT
 homepage: https://github.com/okamitimo233/gmscore-slim

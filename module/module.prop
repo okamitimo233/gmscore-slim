@@ -3,5 +3,5 @@ name=GMS Slim
 version=v1.2
 versionCode=3
 author=Eta
-description=压制 GMS 的后台唤醒、遥测与常驻服务。改动都走 appops / pm / device_config / settings 运行时接口，不碰系统分区；另附一份 sysconfig overlay，按开关删除 /product/etc/sysconfig/google.xml 里的 4 类豁免行（默认删 1 行），卸载即恢复。改动记入外部清单，卸载时只回滚仍等于本模块写入值的项（待机白名单例外，它每次开机由系统重建）。默认开启「遥测组件压制」和「定位豁免行删除」两项，其余需手动打开。
+description=压制 Google Play services 的后台唤醒、遥测与常驻服务，改动可逐项回滚。详见 README。
 updateJson=https://modules.kernelsu.org/api/v1/modules/gmscore-slim/update.json

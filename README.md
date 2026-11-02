@@ -1,9 +1,16 @@
 <p align="center"><img src="assets/icon.png" width="96" alt="icon"></p>
 
-# GMS Slim v1.2（方向 B：唤醒与服务压制 + sysconfig overlay）
+# GMS Slim v1.2（唤醒与服务压制 + sysconfig overlay）
 
 针对 Google Play services 后台开销的 KernelSU 模块。
-**不修改系统分区**，只用 `appops` / `pm` / `deviceidle` / `device_config` / `settings` 运行时接口，每项改动写入外部清单，卸载逐条回滚。
+**不修改系统分区**，只用 `appops` / `pm` / `deviceidle` / `device_config` / `settings` 运行时接口，每项改动写入外部清单，卸载逐条回滚。另一部分走 sysconfig overlay：按开关删除 `/product/etc/sysconfig/google.xml` 里的 4 类豁免行（默认删 1 行），卸载即恢复。
+
+安装后默认只开两项：
+
+- **遥测组件压制** —— 禁用 `MeasurementBroker`、`ClearcutDebug` 系列组件
+- **定位豁免行删除** —— 让 GMS 不再无视系统定位总开关
+
+其余开关默认关闭，需要时改 `/data/adb/gmscore-slim/config.sh` 手动打开。每项的作用、代价和默认值见下面的开关表。
 
 ## 安装
 
