@@ -35,7 +35,7 @@
 
 从 [Releases](https://github.com/okamitimo233/gmscore-slim/releases) 下载模块包，在 KernelSU 管理器的模块页刷入，重启。
 
-模块包名由发布工具按 `{id}-{versionCode}-{version}.zip` 生成，`version` 取自 `module.prop` 并清理成文件名安全形式。当前 `module.prop` 是 `version=v1.2`、`versionCode=3`，对应 `gmscore-slim-3-v1.2.zip`。
+模块包名由发布工具按 `{id}-{versionCode}-{version}.zip` 生成，`version` 取自 `module.prop` 并清理成文件名安全形式。按现在仓库里的 `module.prop`（`version=v1.2`、`versionCode=3`）会得到 `gmscore-slim-3-v1.2.zip`；发版前改了这两个字段，包名随之变化。
 
 安装阶段只做三件事：修脚本权限、首次生成开关文件、生成 overlay。**不调 `pm` / `cmd`**，因为那时 system_server 可能还没起来。
 
