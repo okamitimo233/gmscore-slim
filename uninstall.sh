@@ -10,6 +10,7 @@ if [ ! -f "$LIB" ]; then
   exit 0
 fi
 
+# shellcheck disable=SC1090  # 运行时路径，shellcheck 无法静态解析
 . "$LIB"
 echo "===== GMS Slim 卸载回滚 ====="
 rollback_all

@@ -13,8 +13,8 @@ echo "===== 运行时现状 ====="
 _pid=$(pidof "$GMS" 2>/dev/null)
 echo "GMS pid:        ${_pid:-未运行}"
 if [ -n "$_pid" ]; then
-  echo "oom_score_adj:  $(cat /proc/$_pid/oom_score_adj 2>/dev/null)"
-  echo "VmRSS:          $(grep VmRSS /proc/$_pid/status 2>/dev/null | tr -s ' ' | cut -d' ' -f2-)"
+  echo "oom_score_adj:  $(cat "/proc/$_pid/oom_score_adj" 2>/dev/null)"
+  echo "VmRSS:          $(grep VmRSS "/proc/$_pid/status" 2>/dev/null | tr -s ' ' | cut -d' ' -f2-)"
 fi
 echo "GMS PSS:        $(dumpsys meminfo "$GMS" </dev/null 2>/dev/null | sed -n 's/^ *TOTAL PSS: *\([0-9]*\).*/\1/p' | head -n1) kB"
 echo "待机桶 gms:     $(am get-standby-bucket "$GMS" </dev/null 2>/dev/null)"
@@ -44,7 +44,7 @@ echo
 echo "===== sysconfig overlay ====="
 if [ "${FEATURE_SYSCONFIG:-1}" = "1" ]; then
   echo "  开关: LOCATION=$FEATURE_SC_LOCATION  POWERSAVE=$FEATURE_SC_POWERSAVE  DATAUSAGE=$FEATURE_SC_DATAUSAGE  UNTHROTTLE=$FEATURE_SC_UNTHROTTLE"
-  echo "  挂载状态: $(sc_verify 2>&1)"
+  echo "  挂载状态: $(sc_verify "$MODDIR" 2>&1)"
   echo "  /product 实际读到: $(wc -l <"$SC_SRC" 2>/dev/null) 行"
   if [ -f "$MODDIR/$SC_DST_REL" ]; then
     echo "  模块内生成版:     $(wc -l <"$MODDIR/$SC_DST_REL" 2>/dev/null) 行"

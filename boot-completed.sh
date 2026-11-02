@@ -14,7 +14,7 @@ sleep 30
 # sysconfig overlay 的挂载结果只在开机后才看得到，这里记一笔
 load_config
 if [ "${FEATURE_SYSCONFIG:-1}" = "1" ]; then
-  log "sysconfig: $(sc_verify 2>&1)"
+  log "sysconfig: $(sc_verify "$MODDIR" 2>&1)"
   log "  /product 读到 $(wc -l <"$SC_SRC" 2>/dev/null) 行；模块内版本 $(wc -l <"$MODDIR/$SC_DST_REL" 2>/dev/null) 行"
   if grep -q 'allow-ignore-location-settings package="com.google.android.gms"' "$SC_SRC" 2>/dev/null; then
     log "  定位豁免行仍存在（overlay 未生效）"

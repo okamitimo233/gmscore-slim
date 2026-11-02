@@ -5,7 +5,6 @@ ui_print "- GMS Slim 安装中"
 ui_print "- 目标: $GMS（Play services）"
 
 STATE_DIR=/data/adb/gmscore-slim
-MODID=gmscore-slim
 
 mkdir -p "$STATE_DIR/state" "$STATE_DIR/log" "$STATE_DIR/lib" "$STATE_DIR/backup"
 
@@ -35,6 +34,7 @@ fi
 # 加载开关后生成覆盖文件。安装期 /product 是原始内容，适合取基准。
 _i=0
 while [ ! -f "$STATE_DIR/config.sh" ] && [ $_i -lt 5 ]; do sleep 1; _i=$((_i+1)); done
+# shellcheck disable=SC1091  # 运行时路径，shellcheck 无法静态解析
 . "$STATE_DIR/config.sh" 2>/dev/null
 
 if [ "${FEATURE_SYSCONFIG:-1}" = "1" ]; then

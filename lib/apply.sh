@@ -3,7 +3,9 @@
 # 依赖调用方先 source lib/core.sh 并设好 MODDIR。
 
 load_config() {
+  # shellcheck disable=SC1091  # 运行时路径，shellcheck 无法静态解析
   . "$MODDIR/lib/config.sh"
+  # shellcheck disable=SC1091
   [ -f "$STATE_DIR/config.sh" ] && . "$STATE_DIR/config.sh"
 }
 

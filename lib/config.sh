@@ -1,3 +1,4 @@
+# shellcheck disable=SC2034  # 本文件是被 source 的配置，变量在使用方读取
 # GMS Slim 开关（改完重启生效）
 # 也可改 /data/adb/gmscore-slim/config.sh，优先于本文件生效（升级不丢）
 # 1 = 开启，0 = 关闭。每项独立可回滚。

@@ -13,10 +13,8 @@ LOG_DIR=$STATE_DIR/log
 STATE_FILES=$STATE_DIR/state
 MANIFEST=$STATE_FILES/manifest.tsv
 GMS=com.google.android.gms
-VENDING=com.android.vending
 TAB=$(printf '\t')
 LOG_FILE=$LOG_DIR/last.log
-DEVNULL=/dev/null
 
 mkdir -p "$STATE_FILES" "$LOG_DIR" "$STATE_DIR/backup" "$STATE_DIR/lib" 2>/dev/null
 
