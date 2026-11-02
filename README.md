@@ -57,7 +57,7 @@
 ## 四、安全设计
 
 1. **状态外置**：清单在 `/data/adb/gmscore-slim/state/manifest.tsv`，不在模块目录（magic mount 会整块替换）。
-2. **先读后写再校验**：每项记录原值 → 写 → 回读，失败记 `FAIL` 不静默。
+2. **先读后写再复核**：每项记录原值 → 写 → 回读。appops / device_config / settings 的回读读的就是系统本身，`OK` 即为真实结果；组件和权限的回读读的是本地快照，只能说明命令已下达，所以每轮结尾会重新抓一次系统状态做 `VERIFY`。失败不会被静默：日志里出现 `FAIL` / `VERIFY-FAIL` 就代表那一项没生效。
 3. **只回滚自己的改动**：现值已被别人改过的项跳过并保留。
 4. **回滚不留痕迹**：`device_config` 施加用 `override`（sticky），回滚走 `clear_override` + `put`，验证过 override 条目数回到 0，不会钉住键位妨碍其他模块。
 5. **不盲改**：组件名与权限名先从 `pm dump` / `dumpsys package` 生成快照，不存在或不可改的记 `ABSENT` / `LOCKED`。

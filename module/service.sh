@@ -1,6 +1,6 @@
 #!/system/bin/sh
 # late_start service：主施加时机
-# 依据本机既有约定（hanamaki_kernel / playintegrityfix）：等 sys.boot_completed + 用户解密后再动 pm/settings
+# 与常见内核调优模块一致：等 sys.boot_completed 和用户解密完成后再动 pm / settings
 MODDIR=${0%/*}
 [ -z "$MODDIR" ] && MODDIR=/data/adb/modules/gmscore-slim
 

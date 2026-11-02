@@ -243,3 +243,35 @@ sysconfig XML 是**只读系统分区**的文件，能被 magic mount 覆盖；
 前者那一步带 `contents: write`，不能跟分支走。
 
 本地不再有打包命令。要验证包结构就推 PR，CI 的 `precheck` 用同一个 action 跑 `dry-run: true`。
+
+## 组件的「回读校验」曾经是自证
+
+`comp_read` / `perm_read` 读的是 `/data/adb/gmscore-slim/state/` 下的本地快照，而不是系统。
+`kv_write` 在真正执行 `pm disable` / `pm revoke` 之后，会立刻调 `comp_cache_set` / `perm_cache_set`
+把快照改成目标值。所以下面这段里的回读永远成功：
+
+```sh
+kv_write comp "$_c" "$_w"   # 内部：pm disable 然后改快照
+_v=$(comp_read "$_c")       # 读的是刚改过的快照
+[ "$_v" = "$_w" ] && log "OK ..."   # 恒成立
+```
+
+结果就是日志里的 `OK comp ...` 只说明快照写成功了。`pm disable` 明明失败了，也照样打 OK。
+`perm` 同理。这和 README 里「失败不静默」的说法对不上，是个真 bug，不是措辞问题。
+
+改法：
+
+- 组件和权限的单条日志由 `OK` 改成 `SET`，含义是「命令已下达」，不再假装校验过了。
+- 新增 `verify_real()`，在 `run_all` 结尾重新抓一次系统状态（组件走 `gms_snapshot`
+  的 `pm dump`，权限走 `perm_snapshot` 的 `dumpsys package`），再拿清单里本模块写入的值
+  逐条比对，输出 `VERIFY-OK` / `VERIFY-FAIL`。一轮只多两次 dump，不是每项一次。
+- `appops` / `device_config` / `settings` 三类的回读本来就读系统（`cmd appops get`、
+  `cmd device_config get`、`settings get`），`OK` 是真实结论，保持不变。
+
+判据用实测验证过：在 `/data/local/tmp` 造一份清单，写两个确实已禁用的组件和一个没有禁用的，
+`verify_real` 给出 2 个 `VERIFY-OK`、1 个 `VERIFY-FAIL`，返回码 1；权限那条同样能区分
+`BLUETOOTH_SCAN`（真实已授予）与 `ACCESS_FINE_LOCATION`（期望 false、实际 true）。
+
+顺带确认：本机 HyperOS 上 `cmd package get-component-enabled-setting` 和
+`pm check-permission` 都不存在（返回 `Unknown command`），所以单点真实查询做不到，
+只能整包 dump 再解析。

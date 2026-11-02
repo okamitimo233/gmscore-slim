@@ -1,6 +1,6 @@
 #!/system/bin/sh
 # 开机完成后的第二遍复核
-# GMS 会自我恢复被禁用的组件（实测 MeasurementBrokerService 会自愈），
+# GMS 会自我恢复被禁用的组件（实测 MeasurementBroker 系列会自愈），
 # 因此每轮开机再核一次，保证幂等
 MODDIR=${0%/*}
 [ -z "$MODDIR" ] && MODDIR=/data/adb/modules/gmscore-slim

@@ -6,7 +6,7 @@ LIB="$STATE_DIR/lib/core.sh"
 [ -f "$LIB" ] || LIB="${0%/*}/lib/core.sh"
 
 if [ ! -f "$LIB" ]; then
-  echo "找不到 core.sh，无法自动回滚。请手动检查 $STATE_DIR/state/manifest.tsv"
+  echo "找不到 core.sh，无法自动回滚。改动清单留在 $STATE_DIR/state/manifest.tsv，日志见 $STATE_DIR/log/last.log"
   exit 0
 fi
 
@@ -17,4 +17,4 @@ rollback_all
 
 # 待机白名单重启后由系统重置，无需处理
 echo "回滚完成。建议重启一次让 GMS 回到原始状态。"
-echo "日志: $LOG_FILE"
+echo "日志：$LOG_FILE"

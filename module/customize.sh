@@ -2,7 +2,7 @@
 # 本模块的运行时改动不碰系统分区；sysconfig 部分走 systemless overlay
 
 ui_print "- GMS Slim 安装中"
-ui_print "- 目标: $GMS（Play services）"
+ui_print "- 目标：com.google.android.gms（Google Play services）"
 
 STATE_DIR=/data/adb/gmscore-slim
 
@@ -25,9 +25,9 @@ set_perm "$STATE_DIR/lib/core.sh" 0 0 0644
 if [ ! -f "$STATE_DIR/config.sh" ]; then
   cp -f "$MODPATH/lib/config.sh" "$STATE_DIR/config.sh"
   set_perm "$STATE_DIR/config.sh" 0 0 0644
-  ui_print "- 已生成开关文件: /data/adb/gmscore-slim/config.sh"
+  ui_print "- 已生成开关文件：/data/adb/gmscore-slim/config.sh"
 else
-  ui_print "- 保留已有开关文件: /data/adb/gmscore-slim/config.sh"
+  ui_print "- 保留已有开关文件：/data/adb/gmscore-slim/config.sh"
 fi
 
 # ---------- sysconfig overlay ----------
@@ -39,12 +39,12 @@ while [ ! -f "$STATE_DIR/config.sh" ] && [ $_i -lt 5 ]; do sleep 1; _i=$((_i+1))
 
 if [ "${FEATURE_SYSCONFIG:-1}" = "1" ]; then
   . "$MODPATH/lib/sysconfig.sh"
-  ui_print "- 生成 sysconfig overlay..."
+  ui_print "- 正在生成 sysconfig overlay…"
   sc_build "$MODPATH" 0 2>/dev/null | while read -r _line; do
     case "$_line" in
-      SC-OK*)      ui_print "  $_line" ;;
-      SC-REMOVED*) ui_print "  已删除:${_line#SC-REMOVED}" ;;
-      SC-FAIL*)    ui_print "  ! $_line" ;;
+      SC-OK*)      ui_print "  ${_line#SC-OK }" ;;
+      SC-REMOVED*) ui_print "  已删除：$(printf '%s' "${_line#SC-REMOVED}" | sed 's/^ *//')" ;;
+      SC-FAIL*)    ui_print "  ! ${_line#SC-FAIL }" ;;
     esac
   done
   if [ -f "$MODPATH/system/product/etc/sysconfig/google.xml" ]; then
@@ -57,5 +57,5 @@ else
 fi
 
 ui_print "- 默认只开两项：遥测组件压制、定位豁免行，其余需手动开"
-ui_print "- 重启生效；日志: /data/adb/gmscore-slim/log/last.log"
+ui_print "- 重启生效；日志：/data/adb/gmscore-slim/log/last.log"
 ui_print "- 卸载模块即自动恢复系统文件"

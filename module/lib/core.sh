@@ -279,3 +279,62 @@ rollback_all() {
   rm -f "$_tmp"
   log "已回滚 $_n 项"
 }
+
+# ---------- 真实状态复核 ----------
+# comp_read / perm_read 读的是本地快照，写入时就被改成目标值了，
+# 所以它们只能证明「命令已下达」，证明不了系统真的接受。
+# 这里重新抓一次系统状态（组件走 pm dump，权限走 dumpsys package），
+# 再和清单里本模块写入的值逐条比对。SET 之后紧跟的这一段才是可信结论。
+verify_real() {
+  _n=0
+  _bad=0
+  _m="$STATE_FILES/manifest.verify"
+  cat "$MANIFEST" >"$_m" 2>/dev/null || : >"$_m"
+
+  if gms_snapshot >/dev/null 2>&1 && [ -s "$STATE_FILES/disabled.txt" ]; then
+    while IFS="$TAB" read -r _t _k _o _w; do
+      [ "$_t" = "comp" ] || continue
+      _n=$((_n + 1))
+      _real=$(comp_read "$_k")
+      if [ "$_real" = "$_w" ]; then
+        log "VERIFY-OK   comp $_k = $_w"
+      else
+        log "VERIFY-FAIL comp $_k 期望 $_w，系统实际 $_real"
+        _bad=$((_bad + 1))
+      fi
+    done <"$_m"
+  else
+    log "VERIFY-FAIL 无法重新读取组件状态，本次不做组件复核"
+    _bad=$((_bad + 1))
+  fi
+
+  if perm_snapshot >/dev/null 2>&1 && [ -s "$STATE_FILES/perms.txt" ]; then
+    while IFS="$TAB" read -r _t _k _o _w; do
+      [ "$_t" = "perm" ] || continue
+      _n=$((_n + 1))
+      _real=$(perm_read "$_k")
+      if [ "$_real" = "$_w" ]; then
+        log "VERIFY-OK   perm $_k = $_w"
+      else
+        log "VERIFY-FAIL perm $_k 期望 $_w，系统实际 $_real"
+        _bad=$((_bad + 1))
+      fi
+    done <"$_m"
+  else
+    log "VERIFY-FAIL 无法重新读取权限状态，本次不做权限复核"
+    _bad=$((_bad + 1))
+  fi
+
+  rm -f "$_m"
+
+  if [ "$_n" = "0" ]; then
+    log "VERIFY 清单里没有组件/权限类改动，跳过复核"
+    return 0
+  fi
+  if [ "$_bad" = "0" ]; then
+    log "VERIFY 全部一致（$_n 项）"
+    return 0
+  fi
+  log "VERIFY 有 $_bad 项与系统实际状态不一致（共 $_n 项），这几项没有生效"
+  return 1
+}

@@ -1,12 +1,13 @@
 #!/system/bin/sh
 # sysconfig overlay：生成 systemless 覆盖用的 google.xml
-# 原理：magic mount 把 $MODPATH/system/product/... 挂到 /product/etc/... 之上，
+# 原理：magic mount 把 <模块目录>/system/product/… 挂到 /product/etc/… 之上，
 #      系统读到的是我们生成的版本。卸载模块即自动恢复，无需回滚脚本。
 #
 # 按开关删除 /product/etc/sysconfig/google.xml 里 GMS 相关的 4 类豁免行
-# （默认只删 1 行，其余 103 行原样保留）。
-# 绝对不能删的行：update-ownership（删了 Play 商店无法升级 GMS）、
-#                backup-transport-whitelisted-service、app-data-isolation-whitelisted-app。
+# （默认只删 1 行，其余行原样保留；实际行数见安装提示或「操作」面板）。
+# 自检必查：update-ownership（删了 Play 商店无法升级 GMS）、
+#          backup-transport-whitelisted-service、<config>，外加 dialer 那一行。
+# 任何一条不在了就放弃覆盖，宁可不出效果也不弄坏系统。
 
 SC_SRC=/product/etc/sysconfig/google.xml
 SC_DST_REL=system/product/etc/sysconfig/google.xml
@@ -96,7 +97,7 @@ sc_build() {
 # 验证 overlay 是否真的挂上了（开机后调用）
 # $1=模块根目录，省略则用 /data/adb/modules/<id>
 # 判据：系统实际读到的文件 == 模块内生成版 => 已挂载；
-#       == 备份原版 => 未挂载。不能只比"两者是否不同"，因为处理版和原版本来就不同。
+#       == 备份原版 => 未挂载。不能只比「两者是否不同」，因为处理版和原版本来就不同。
 sc_verify() {
   _mod=${1:-/data/adb/modules/$MODID}
   _mf="$_mod/$SC_DST_REL"

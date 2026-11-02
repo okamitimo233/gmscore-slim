@@ -17,13 +17,13 @@ if [ -n "$_pid" ]; then
   echo "VmRSS:          $(grep VmRSS "/proc/$_pid/status" 2>/dev/null | tr -s ' ' | cut -d' ' -f2-)"
 fi
 echo "GMS PSS:        $(dumpsys meminfo "$GMS" </dev/null 2>/dev/null | sed -n 's/^ *TOTAL PSS: *\([0-9]*\).*/\1/p' | head -n1) kB"
-echo "待机桶 gms:     $(am get-standby-bucket "$GMS" </dev/null 2>/dev/null)"
-echo "白名单条数:     $(wl_count)（system 条目来自 sysconfig，CLI 改不掉）"
+echo "待机分组:       $(am get-standby-bucket "$GMS" </dev/null 2>/dev/null)（10 活跃 / 20 工作集 / 30 常用 / 40 少用 / 45 限制）"
+echo "白名单条数:     $(wl_count)（剩下的多半是 sysconfig 的 system / system-excidle 条目，CLI 只能删 user 那条）"
 echo "startRequested: $(dumpsys activity services "$GMS" </dev/null 2>/dev/null | grep -c 'startRequested=true')"
 echo "清单项数:       $([ -f "$MANIFEST" ] && wc -l <"$MANIFEST" || echo 0)"
 
 echo
-echo "===== 权限状态（可 revoke 的目标）====="
+echo "===== 权限状态（可 revoke 的目标；READ_PHONE_STATE 需开 FEATURE_PERM_PHONE）====="
 perm_snapshot >/dev/null 2>&1
 for _p in BLUETOOTH_SCAN BLUETOOTH_ADVERTISE UWB_RANGING RANGING ACCESS_LOCAL_NETWORK READ_PHONE_STATE; do
   _s=$(perm_read "$_p")
@@ -35,9 +35,9 @@ for _p in BLUETOOTH_SCAN BLUETOOTH_ADVERTISE UWB_RANGING RANGING ACCESS_LOCAL_NE
 done
 
 echo
-echo "===== 可调开关现值 ====="
+echo "===== 系统参数现值 ====="
 echo "  alarm_manager.delay_nonwakeup_alarms_while_screen_off = $(dc_read alarm_manager delay_nonwakeup_alarms_while_screen_off)"
-echo "  该键的 local override 条目数 = $(cmd device_config list_local_overrides </dev/null 2>&1 | grep -c alarm)"
+echo "  override 列表里含 alarm 的条目数 = $(cmd device_config list_local_overrides </dev/null 2>&1 | grep -c alarm)"
 echo "  device_idle_constants = $(set_read device_idle_constants)"
 
 echo
@@ -63,7 +63,7 @@ if [ "${FEATURE_SYSCONFIG:-1}" = "1" ]; then
   fi
 else
   echo "  已关闭（FEATURE_SYSCONFIG=0）"
-  [ -f "$MODDIR/$SC_DST_REL" ] && echo "  ! 模块内仍残留旧 overlay 文件，建议卸载重装以清除"
+[ -f "$MODDIR/$SC_DST_REL" ] && echo "  ! 模块内仍残留旧的 overlay 文件，重启后照样会被挂载；卸载重装可彻底清除"
 fi
 
 echo
@@ -85,7 +85,7 @@ else
 fi
 
 echo
-echo "候选清单（下一轮会处理的对象）:"
+echo "本次处理过的候选清单（target-*.txt）："
 for f in target-telemetry.txt target-persistent.txt target-droidguard.txt; do
   [ -s "$STATE_FILES/$f" ] && { echo "  [$f]"; sed 's/^/    /' "$STATE_FILES/$f"; }
 done

@@ -20,7 +20,8 @@ wait_cmd_ready() {
   return 1
 }
 
-# 施加一项 appops：读现值 -> 不同才写 -> 写清单 -> 回读校验
+# 施加一项 appops / device_config / settings：读现值 -> 不同才写 -> 写清单 -> 回读
+# 这三类回读的是系统本身，所以 OK 就代表系统已经接受
 apply_change() {
   _t=$1; _k=$2; _w=$3
   _cur=$(kv_read "$_t" "$_k")
@@ -60,15 +61,13 @@ comp_change() {
   fi
   man_has comp "$_c" || man_add comp "$_c" "$_cur" "$_w"
   kv_write comp "$_c" "$_w"
-  _v=$(comp_read "$_c")
-  if [ "$_v" = "$_w" ]; then
-    log "OK    comp $_c : $_cur -> $_w"
-  else
-    log "FAIL  comp $_c 期望 $_w 实际 $_v"
-  fi
+  # comp_read 读的是本地快照，写入时已被改成目标值，所以这里只能证明「命令已下达」。
+  # 系统有没有真的接受，由 run_all 结尾的 verify_real 重新抓一次系统状态来判定
+  log "SET   comp $_c : $_cur -> $_w"
 }
 
-# 硬性保护：命中就绝对不动
+# 核心域保护名单：遥测、常驻两项在禁用前都会过一遍，命中就跳过
+# 注意：DroidGuard 分支专治 *.droidguard.*，不经过这个检查（过了等于把整个分支跳空）
 guard_core() {
   case "$1" in
     *Gcm*|*GCM*|*.auth.*|*.common.*|*Chimera*|*.droidguard.*) return 0 ;;
@@ -80,7 +79,7 @@ guard_core() {
 # 注：社区名单里的 AppMeasurement* / CampaignTracking* 在 GMS 26.x 已不存在，
 # usagereport 那些只是 intent action 而非组件。这里只留实测存在的。
 do_telemetry() {
-  log "--- 组件: 遥测/统计 ---"
+  log "--- 遥测与统计组件 ---"
   if [ ! -s "$STATE_FILES/available.txt" ]; then
     log "WARN 无组件快照，跳过"
     return 0
@@ -122,7 +121,7 @@ do_persistent() {
   [ -z "$_active" ] && _active=0
   log "其中当前处于活动状态: $_active 个"
   if [ ! -s "$_list" ]; then
-    log "WARN 未从 dumpsys 里匹配到常驻服务，跳过"
+    log "WARN 组件快照里没有匹配到常驻服务目标，跳过"
     return 0
   fi
   while read -r _c; do
@@ -190,12 +189,8 @@ do_perm_scan() {
     fi
     man_has perm "$_p" || man_add perm "$_p" "$_cur" "false"
     kv_write perm "$_p" "false"
-    _v=$(perm_read "$_p")
-    if [ "$_v" = "false" ]; then
-      log "OK    perm $_p : true -> false（appop 已级联为 Uid mode ignore）"
-    else
-      log "FAIL  perm $_p 期望 false 实际 $_v"
-    fi
+    # 同 comp：回读读的是快照，真实结果由 verify_real 判定
+    log "SET   perm $_p : true -> false"
   done
 }
 
@@ -251,5 +246,11 @@ run_all() {
   [ "${FEATURE_DOZE_CONSTANTS:-0}" = "1" ] && do_doze_constants
   [ "${FEATURE_APPOPS:-0}"       = "1" ] && do_appops
   [ "${FEATURE_WHITELIST:-0}"    = "1" ] && do_whitelist
+  # 前面各类 SET 都只代表「命令已下达」，这里重新读一次系统给出真实结论
+  if [ "${DRY:-0}" = "1" ]; then
+    log "DRY 跳过真实状态复核"
+  else
+    verify_real
+  fi
   log "=== 执行结束 ==="
 }

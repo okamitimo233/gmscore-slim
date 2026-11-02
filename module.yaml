@@ -1,10 +1,10 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/KernelSU-Modules/tools/main/schemas/module.schema.json
 # KernelSU Modules 元数据，参考 https://developers.kernelsu.org/docs/zh-CN/module-yaml
-# version / versionCode / 下载地址来自 release ZIP 里的 module/module.prop，不写在这里。
+# version / versionCode / 下载地址来自 release ZIP 根目录的 module.prop，不写在这里。
 schemaVersion: 1
 id: gmscore-slim
 name: GMS Slim
-summary: 压制 Google Play services 的后台唤醒、遥测与常驻服务，改动可逐条回滚
+summary: 压制 Google Play services 的后台唤醒、遥测与常驻服务，改动记入清单、卸载可回滚
 description: README.md
 license: MIT
 homepage: https://github.com/okamitimo233/gmscore-slim
