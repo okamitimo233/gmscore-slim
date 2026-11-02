@@ -43,7 +43,7 @@ wc -l /product/etc/sysconfig/google.xml               # 挂上后是 106（原�
 | [user-guide.md](user-guide.md) | 安装、默认配置、怎么开开关、验证、卸载 | 使用者 |
 | [reference.md](reference.md) | 17 个开关全表、日志标记字典、状态文件布局 | 使用者 / 维护者 |
 | [design.md](design.md) | 分层架构、执行时序、清单与回滚、真实复核、overlay 判据 | 维护者 |
-| [platform-notes.md](platform-notes.md) | Android 16/17 的能力边界、AOSP 依据、五个实战坑 | 维护者 |
+| [platform-notes.md](platform-notes.md) | Android 16/17 的能力边界、AOSP 依据、实战坑与解析陷阱 | 维护者 |
 | [troubleshooting.md](troubleshooting.md) | 症状 → 诊断命令 → 处置 | 使用者 |
 | [contributing.md](contributing.md) | 工具链、代码约定、提交规范、发布流程 | 贡献者 |
 
