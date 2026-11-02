@@ -175,3 +175,7 @@ git tag v1.3 && git push origin v1.3
 
 提交规范与钩子见 [`CONTRIBUTING.md`](CONTRIBUTING.md)；已知的平台坑与实测依据见 [`DEVNOTES.md`](DEVNOTES.md)。
 
+`module/module.prop` 里的 `updateJson` 指向 KernelSU Modules 的托管地址
+（`https://modules.kernelsu.org/api/v1/modules/gmscore-slim/update.json`），
+模块在 [modules.kernelsu.org](https://modules.kernelsu.org) 上架后启用应用内更新；上架前该地址不存在。
+
