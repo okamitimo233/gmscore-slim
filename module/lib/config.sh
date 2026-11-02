@@ -7,16 +7,19 @@
 #           FEATURE_PERM_PHONE / FEATURE_PERM_BTCONNECT 依附 FEATURE_PERM_SCAN
 # 例外：待机白名单不记清单，每次开机由系统重新施加
 #
-# 下面几条是本机（Android 17）实测出来的能力边界，模块能用哪些手段全由它决定：
-#   ✅ pm disable <组件>                 有效，压制效果最明显的一环
-#   ✅ pm revoke <非 SYSTEM_FIXED 权限>  有效，对应的 appop 会级联成 Uid mode ignore
-#   ✅ cmd device_config override        有效，而且能长期保持
-#                                        （override 优先级高于 put，不会被别人的 put 冲掉）
-#   ✅ settings put global               有效
-#   ✅ cmd appops set <非运行时 op>      有效（RUN_ANY_IN_BACKGROUND / WAKE_LOCK / START_FOREGROUND）
-#   ❌ cmd appops set <运行时 op>        平台拒绝：这类 op 由权限派生，不允许直接设置
-#   ❌ pm revoke <SYSTEM_FIXED 权限>     无效。GMS 上只有 4 个：三个定位权限和 ACTIVITY_RECOGNITION
-#   ❌ deviceidle whitelist -system      没这个语法，只认 +/-/= 开头的包名
+# 下面几条是本机（Android 17）实测出来的能力边界，模块能用哪些手段全由它决定。
+#
+# 可用：
+#   pm disable <组件>                   压制效果最明显的一环
+#   pm revoke <非 SYSTEM_FIXED 权限>    对应的 appop 会级联成 Uid mode ignore
+#   cmd device_config override          能长期保持，优先级高于 put，不会被别人的 put 冲掉
+#   settings put global                 写后读回一致
+#   cmd appops set <非运行时 op>        可用（RUN_ANY_IN_BACKGROUND / WAKE_LOCK / START_FOREGROUND）
+#
+# 不可用：
+#   cmd appops set <运行时 op>          平台拒绝：这类 op 由权限派生，不允许直接设置
+#   pm revoke <SYSTEM_FIXED 权限>       返回 0 但仍 granted。GMS 上只有 4 个：三个定位权限和 ACTIVITY_RECOGNITION
+#   deviceidle whitelist -system        没这个语法，只认 +/-/= 开头的包名
 #
 # 以上只在 Android 17 上验证过。换别的系统版本结论可能不同，以日志里的 OK / FAIL / VERIFY 为准。
 
