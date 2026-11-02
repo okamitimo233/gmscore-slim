@@ -137,3 +137,22 @@ dumpsys location | grep -A2 thunderbird
 ```
 
 `boot-completed.sh` 每次开机会在日志记一行 `sysconfig: MOUNTED / NOT-MOUNTED / UNKNOWN`。
+
+## 八、参与开发
+
+本项目有完整的提交约束（git 钩子 + CI），细节见 [`CONTRIBUTING.md`](CONTRIBUTING.md)。
+
+```sh
+git clone git@github.com:okamitimo233/gmscore-slim.git
+cd gmscore-slim
+./scripts/setup.sh      # 安装钩子 + 依赖检查
+./scripts/verify.sh     # 手动跑全部校验
+./scripts/build.sh      # 打包可刷入的 zip
+```
+
+提交时会自动检查：shell 语法与静态分析、脚本可执行位、CRLF、
+`module.prop` 完整性、产物入库、敏感信息、版本一致性，
+以及提交信息是否符合 Conventional Commits。
+
+已知的平台坑与实测依据见 [`DEVNOTES.md`](DEVNOTES.md)。
+
