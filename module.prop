@@ -1,0 +1,6 @@
+id=gmscore-slim
+name=GMS Slim（方向B：唤醒与服务压制）
+version=v1.2
+versionCode=3
+author=Eta
+description=按实测证据压制 GMS 后台唤醒与常驻服务。运行时改动走 appops / pm / device_config / settings，另含一份 sysconfig systemless overlay（只删 GMS 相关 4 行，卸载自动恢复）；全部改动写入外部清单，卸载可逐条回滚。默认只开低风险项。
