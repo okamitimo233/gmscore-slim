@@ -76,11 +76,11 @@ guard_core() {
   return 1
 }
 
-# ---------- ③ 遥测/统计组件 ----------
+# ---------- 遥测/统计组件 ----------
 # 注：社区名单里的 AppMeasurement* / CampaignTracking* 在 GMS 26.x 已不存在，
 # usagereport 那些只是 intent action 而非组件。这里只留实测存在的。
 do_telemetry() {
-  log "--- ③ 组件: 遥测/统计 ---"
+  log "--- 组件: 遥测/统计 ---"
   if [ ! -s "$STATE_FILES/available.txt" ]; then
     log "WARN 无组件快照，跳过"
     return 0
@@ -102,9 +102,9 @@ do_telemetry() {
   log "遥测候选 $_n 个，明细见 $_list"
 }
 
-# ---------- ⑦ 常驻服务压制 ----------
+# ---------- 常驻服务压制 ----------
 do_persistent() {
-  log "--- ⑦ 常驻服务压制 ---"
+  log "--- 常驻服务压制 ---"
   # dumpsys 里活动服务写作 com.google.android.gms/.foo.BarService（相对名），需还原全名
   dumpsys activity services "$GMS" </dev/null 2>/dev/null | cat >"$STATE_FILES/services.dump"
   grep -oE 'com\.google\.android\.gms/[A-Za-z0-9_./]+' "$STATE_FILES/services.dump" \
@@ -132,9 +132,9 @@ do_persistent() {
   done <"$_list"
 }
 
-# ---------- ⑧ DroidGuard ----------
+# ---------- DroidGuard ----------
 do_droidguard() {
-  log "--- ⑧ DroidGuard（高风险）---"
+  log "--- DroidGuard（高风险）---"
   if [ ! -s "$STATE_FILES/available.txt" ]; then
     log "WARN 无组件快照，跳过"
     return 0
@@ -147,9 +147,9 @@ do_droidguard() {
   done <"$_list"
 }
 
-# ---------- ① 可写的非运行时 appops ----------
+# ---------- 可写的非运行时 appops ----------
 do_appops() {
-  log "--- ① appops: 非运行时 op（实测可写）---"
+  log "--- appops: 非运行时 op ---"
   while read -r _op _mode; do
     [ -z "$_op" ] && continue
     apply_change appops "$GMS|$_op" "$_mode"
@@ -160,9 +160,9 @@ START_FOREGROUND ignore
 EOF
 }
 
-# ---------- ① 扫描类权限收紧（替代被拒的 appops 运行时 op）----------
+# ---------- 扫描类权限收紧（替代被拒的 appops 运行时 op）----------
 do_perm_scan() {
-  log "--- ① 权限: 扫描类（pm revoke）---"
+  log "--- 权限: 扫描类（pm revoke）---"
   if [ ! -s "$STATE_FILES/perms.txt" ]; then
     log "WARN 无权限快照，跳过"
     return 0
@@ -199,24 +199,24 @@ do_perm_scan() {
   done
 }
 
-# ---------- ⑤ 熄屏延迟非唤醒闹钟（device_config override）----------
+# ---------- 熄屏延迟非唤醒闹钟（device_config override）----------
 do_alarm_delay() {
-  log "--- ⑤ device_config: 熄屏延迟非唤醒闹钟（override）---"
+  log "--- device_config: 熄屏延迟非唤醒闹钟（override）---"
   apply_change devconfig "alarm_manager|delay_nonwakeup_alarms_while_screen_off" "true"
 }
 
-# ---------- ⑤b Doze 常量 ----------
+# ---------- Doze 常量 ----------
 do_doze_constants() {
-  log "--- ⑤b settings: device_idle_constants ---"
+  log "--- settings: device_idle_constants ---"
   # 缩短深睡后的维护窗与 idle 停留时间，减少 GMS 在 Doze 期间获得执行机会
   _want="idle_to=1800000,light_idle_to=1800000,max_idle_to=21600000,min_time_to_alarm=600000"
   apply_change settings "device_idle_constants" "$_want"
 }
 
-# ---------- ⑥ 待机白名单 ----------
+# ---------- 待机白名单 ----------
 # 不写清单：白名单每次开机由系统重建，本项每轮重新施加
 do_whitelist() {
-  log "--- ⑥ 待机白名单 ---"
+  log "--- 待机白名单 ---"
   _before=$(wl_count)
   if [ "$_before" = "0" ]; then
     log "SKIP  gms 已不在白名单"

@@ -3,7 +3,8 @@
 # 原理：magic mount 把 $MODPATH/system/product/... 挂到 /product/etc/... 之上，
 #      系统读到的是我们生成的版本。卸载模块即自动恢复，无需回滚脚本。
 #
-# 只改 /product/etc/sysconfig/google.xml 里 GMS 的 4 行，其余 103 行原样保留。
+# 按开关删除 /product/etc/sysconfig/google.xml 里 GMS 相关的 4 类豁免行
+# （默认只删 1 行，其余 103 行原样保留）。
 # 绝对不能删的行：update-ownership（删了 Play 商店无法升级 GMS）、
 #                backup-transport-whitelisted-service、app-data-isolation-whitelisted-app。
 

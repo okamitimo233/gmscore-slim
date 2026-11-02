@@ -56,6 +56,6 @@ else
   ui_print "- sysconfig overlay 已关闭（FEATURE_SYSCONFIG=0）"
 fi
 
-ui_print "- 默认只开启 ③ 遥测组件 + 删定位豁免那行（其余需手动开）"
+ui_print "- 默认只开两项：遥测组件压制、定位豁免行，其余需手动开"
 ui_print "- 重启生效；日志: /data/adb/gmscore-slim/log/last.log"
 ui_print "- 卸载模块即自动恢复系统文件"
