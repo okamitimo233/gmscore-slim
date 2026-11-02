@@ -2,6 +2,6 @@ id=gmscore-slim
 name=GMS Slim
 version=v1.2
 versionCode=3
-author=Eta
+author=okamitimo233
 description=压制 Google Play services 的后台唤醒、遥测与常驻服务，改动可逐项回滚。详见 README。
 updateJson=https://modules.kernelsu.org/api/v1/modules/gmscore-slim/update.json
