@@ -1,0 +1,16 @@
+#!/bin/sh
+# commit-msg：校验提交信息是否符合 Conventional Commits
+# 安装在 .githooks/ 下，通过 git config core.hooksPath .githooks 生效
+#
+# 紧急跳过：git commit --no-verify
+set -u
+
+ROOT=$(CDPATH='' cd -- "$(dirname "$0")/.." && pwd)
+MSG_FILE=${1:-}
+
+if [ ! -x "$ROOT/scripts/check-commit-msg.sh" ]; then
+  echo "commit-msg: 找不到 scripts/check-commit-msg.sh，跳过检查" >&2
+  exit 0
+fi
+
+exec "$ROOT/scripts/check-commit-msg.sh" "$MSG_FILE"

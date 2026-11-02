@@ -1,0 +1,121 @@
+name: CI
+
+# 钩子可以被 git commit --no-verify 绕过，CI 是最后一道防线。
+# 这里复用与本地完全相同的 scripts/verify.sh，保证「本地能过 = CI 能过」。
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: 校验
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 安装 shellcheck
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq shellcheck
+
+      - name: 显示工具版本
+        run: |
+          shellcheck --version | head -3
+          git --version
+
+      - name: 运行仓库校验
+        run: ./scripts/verify.sh
+
+      - name: 校验 module.prop 必需字段
+        run: |
+          for k in id name version versionCode author description; do
+            grep -q "^$k=" module.prop || { echo "缺少字段: $k"; exit 1; }
+          done
+          echo "module.prop 字段完整"
+
+  build:
+    name: 打包模块
+    runs-on: ubuntu-latest
+    needs: verify
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 读取版本号
+        id: ver
+        run: |
+          V=$(sed -n 's/^version=//p' module.prop | head -1)
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+          echo "检测到版本: $V"
+
+      - name: 构建 zip
+        run: ./scripts/build.sh "$GITHUB_WORKSPACE"
+
+      - name: 验证包内脚本可执行位
+        run: |
+          Z=$(ls gmscore-slim-*.zip | head -1)
+          echo "检查 $Z"
+          BAD=0
+          for f in service.sh action.sh customize.sh boot-completed.sh uninstall.sh; do
+            MODE=$(unzip -Z "$Z" "$f" | awk '{print $1}')
+            if [ "$MODE" != "-rwxr-xr-x" ]; then
+              echo "✗ $f 权限为 $MODE，应为 -rwxr-xr-x"
+              BAD=1
+            fi
+          done
+          [ "$BAD" = "0" ] && echo "✓ 所有脚本权限正确"
+          exit "$BAD"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gmscore-slim-${{ steps.ver.outputs.version }}
+          path: gmscore-slim-*.zip
+          retention-days: 90
+
+  release:
+    name: 发布
+    runs-on: ubuntu-latest
+    needs: [verify, build]
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 读取版本号
+        id: ver
+        run: |
+          V=$(sed -n 's/^version=//p' module.prop | head -1)
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+
+      - name: 下载构建产物
+        uses: actions/download-artifact@v4
+        with:
+          name: gmscore-slim-${{ steps.ver.outputs.version }}
+
+      - name: 创建 Release 并上传 zip
+        uses: softprops/action-gh-release@v2
+        with:
+          files: gmscore-slim-*.zip
+          generate_release_notes: true
+          body: |
+            ## 安装
+            在 KernelSU / Magisk 管理器中刷入本 zip。
+
+            默认只开启低风险项，其余功能需编辑
+            `/data/adb/gmscore-slim/config.sh` 后重启。
+
+            ## 验证
+            重启后查看日志：
+            ```
+            cat /data/adb/gmscore-slim/log/last.log
+            ```
+            其中 `sysconfig:` 一行会说明 overlay 是否生效
+            （`MOUNTED` / `NOT-MOUNTED` / `UNKNOWN`）。

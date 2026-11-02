@@ -1,0 +1,17 @@
+#!/bin/sh
+# pre-commit：提交前跑全部静态检查
+# 安装在 .githooks/ 下，通过 git config core.hooksPath .githooks 生效
+#
+# 紧急跳过：git commit --no-verify
+# （但 CI 仍会检查，绕不过去）
+set -u
+
+ROOT=$(CDPATH='' cd -- "$(dirname "$0")/.." && pwd)
+
+# 检查脚本自身必须先存在，否则说明仓库结构被破坏
+if [ ! -x "$ROOT/scripts/verify.sh" ]; then
+  echo "pre-commit: 找不到 scripts/verify.sh，跳过检查" >&2
+  exit 0
+fi
+
+exec "$ROOT/scripts/verify.sh" --quick

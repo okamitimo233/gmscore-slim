@@ -16,3 +16,8 @@ google.xml.orig
 Thumbs.db
 *.swp
 *~
+
+# husky（可选路径）安装时生成
+/.husky/_
+node_modules/
+package-lock.json

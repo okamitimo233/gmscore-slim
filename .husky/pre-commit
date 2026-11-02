@@ -1,0 +1,7 @@
+#!/bin/sh
+# husky 包装器：把 hooks 转发给仓库统一的 .githooks 实现
+#
+# 为什么这样做：本仓库的检查逻辑只有一份（.githooks/ + scripts/），
+# husky 只是可选的安装方式。这样无论用 core.hooksPath=.githooks
+# 还是 husky，跑的都是同一套规则，不会出现两边不一致。
+exec "$(dirname "$0")/../.githooks/pre-commit"

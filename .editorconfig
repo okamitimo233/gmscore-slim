@@ -1,0 +1,23 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+# Shell 脚本统一 2 空格缩进（与现有代码一致）
+[*.sh]
+indent_style = space
+indent_size = 2
+
+# Markdown 保留行尾空格（用于强制换行）
+[*.md]
+trim_trailing_whitespace = false
+
+# module.prop 是 key=value 格式，不要动
+[*.prop]
+indent_size = none
+insert_final_newline = true
